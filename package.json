@@ -3,18 +3,29 @@
     "version": "0.1.0",
     "private": true,
     "scripts": {
-        "dev": "next dev",
+        "dev": "node server.js",
         "build": "next build",
-        "start": "next start -p 8888"
+        "start": "cross-env NODE_ENV=production node server.js"
     },
     "dependencies": {
         "@ant-design/icons": "^4.2.2",
         "@zeit/next-less": "^1.0.1",
         "antd": "^4.6.2",
         "babel-plugin-import": "^1.13.0",
+        "cheerio": "^1.0.0-rc.3",
+        "cross-env": "^7.0.2",
         "date-fns": "^2.11.1",
         "gray-matter": "^4.0.2",
+        "imageMagick": "^0.1.2",
+        "jsonwebtoken": "^8.5.1",
+        "koa": "^2.13.0",
+        "koa-bodyparser": "^4.3.0",
+        "koa-jwt": "^4.0.0",
+        "koa-router": "^9.4.0",
+        "koa-static": "^5.0.0",
         "less": "^3.12.2",
+        "mysql": "^2.18.1",
+        "mysql2": "^2.2.5",
         "next": "9.3.5",
         "react": "16.13.1",
         "react-dom": "16.13.1",
@@ -22,12 +33,18 @@
         "redux": "^4.0.5",
         "redux-devtools-extension": "^2.13.8",
         "remark": "^12.0.0",
-        "remark-html": "^11.0.1"
+        "remark-html": "^11.0.1",
+        "request": "^2.88.2",
+        "save-dev": "0.0.1-security",
+        "sequelize": "^6.3.5",
+        "sharp": "^0.26.2",
+        "superagent": "^6.1.0",
+        "utility": "^1.16.3"
     },
     "devDependencies": {
         "@types/node": "^14.6.2",
         "@types/react": "^16.9.48",
         "typescript": "^4.0.2"
     },
-    "proxy": "http://106.55.29.29:9999"
+    "proxy": "http://192.168.4.138:3000"
 }

@@ -15,8 +15,14 @@ html::-webkit-scrollbar-track {
     border-radius: 0;
     background: rgba(0, 0, 0, 0.1);
 }
+#__next{
+    height: 100%;
+}
 #root{
     width: 100%;
+    height: 100%;
+}
+.ant-layout{
     height: 100%;
 }
 .header{
@@ -50,7 +56,8 @@ html::-webkit-scrollbar-track {
         height: 100%;
         align-items: center;
         a{
-            display: block;
+            display: flex;
+            align-items: center;
             height: 100%;
             line-height: 54px;
             img{
@@ -182,5 +189,223 @@ html::-webkit-scrollbar-track {
             }
         }
     }
-    
+}
+
+.image-code{
+    width: 420px;
+    padding: 10px;
+    position: relative;
+    .con{
+        position: relative;
+        .bigBg{
+
+        }
+        .aniBg{
+            position: absolute;
+            left: 10;
+            top: 0;
+        }
+        .image-refresh{
+            font-size: 18px;
+            color: #ffffff;
+            position: absolute;
+            right: 10px;
+            top: 5px;
+        }
+    }
+    .ani-progress{
+        position: relative;
+        height: 38px;
+        margin-top: 14px;
+        border: 1px solid #e1e1e1;
+        background-color: #f5f5f5;
+        .progress{
+            position: absolute;
+            left: 0;
+            top: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #808080;
+            height: 36px;
+            width: 36px;
+            border: 1px solid #e1e1e1;
+        }
+        .progress-bg{
+            position: absolute;
+            width: 0;
+            height: 100%;
+            left: 0;
+            border: 1px solid #1890ff ;
+            background-color: #e6f7ff;
+            transition: background-color 0.2s linear;
+            display: none;
+        }
+    }
+}
+.footer{
+    height: 47px;
+    padding: 0;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    .music-player-content{
+        width: 980px;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        .music-ctrl{
+            display: flex;
+            align-items: center;
+            width: 137px;
+            .left, .play, .right{
+                display: flex;
+                margin-right: 8px;
+                align-items: center;
+                justify-content: center;
+                color: #ffffff;
+                font-size: 18px;
+                border-radius: 50%;
+                transition: all 0.2s;
+            }
+            .left{
+                width: 28px;
+                height: 28px;
+                padding-right: 3px;
+            }
+            .left:hover::after{
+                display: flex;
+                width: 100%;
+                height: 100%;
+                border-radius: 50%;
+                background-color: rgba(0, 0, 0, 0.7);
+            }
+            .play{
+                width: 36px;
+                height: 36px;
+                font-size: 20px;
+            }
+            .play1{
+                padding-left: 3px;
+            }
+            .play:hover::after{
+                display: flex;
+                width: 100%;
+                height: 100%;
+                border-radius: 50%;
+                background-color: rgba(0, 0, 0, 0.7);
+            }
+            .right{
+                width: 28px;
+                height: 28px;
+                padding-left: 3px;
+            }
+            .right:hover::after{
+                display: flex;
+                width: 100%;
+                height: 100%;
+                border-radius: 50%;
+                background-color: rgba(0, 0, 0, 0.7);
+            }
+        }
+        .music-info{
+            display: flex;
+            align-items: center;
+            .pic{
+                border-radius: 4px;
+                overflow: hidden;
+                margin-right: 15px;
+                img{
+                    width: 34px;
+                    height: 34px;
+                }
+            }
+            .progress-content{
+                .title{
+                    margin-bottom: 4px;
+                    .name{
+                        transition: all 0.2s;
+                    }
+                    .by{
+                        margin-left: 15px;
+                        transition: all 0.2s;
+                    }
+                }
+                .progress{
+                    width: 493px;
+                    height: 9px;
+                    border-radius: 4px;
+                    position: relative;
+                    .load, .bg, .cur{
+                        position: absolute;
+                        height: 100%;
+                        top: 0;
+                        left: 0;
+                        border-radius: 4px;
+                    }
+                    .load{
+                        background-color: #535353;
+                        z-index: 2;
+                    }
+                    .bg{
+                        width: 100%;
+                        z-index: 1;
+                    }
+                    .cur{
+                        z-index: 3;
+                        .cur-btn{
+                            position: absolute;
+                            right: -10px;
+                            top: -4px;
+                            width: 16px;
+                            height: 16px;
+                            background-color: #ffffff;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            border-radius: 50%;
+                            cursor: pointer;
+                            
+                            .inner{
+                                width: 5px;
+                                height: 5px;
+                                border-radius: 50%;
+                            }
+                        }
+                    }
+                }
+            }
+            .time{
+                color: #797979;
+                text-shadow: 0 1px 0 #121212;
+                margin-left: 15px;
+                .timeCur{
+                    color: #a1a1a1;
+                }
+                .timeTotal{
+                    color: #797979;
+                }
+            }
+        }
+    }
+}
+.footer.black{
+    .music-player-content{
+        .music-ctrl{
+            .left, .play, .right{
+                border: 1px solid #636365;
+            }
+            .left:hover{
+                border: 1px solid #909091;
+            }
+            .play:hover{
+                border: 1px solid #909091;
+            }
+            .right:hover{
+                border: 1px solid #909091;
+            }
+        }
+    }
 }

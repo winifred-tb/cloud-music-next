@@ -1,12 +1,13 @@
 import React from 'react';
 import Link from 'next/link';
-import { Layout, Popover, Dropdown, Form, message, Menu, Modal, Input } from 'antd';
+import { Layout, Popover, Dropdown, Form, message, Menu, Modal, Input, Button } from 'antd';
+import { FormInstance } from 'antd/lib/form';
 import { connect } from 'react-redux';
 import { createFromIconfontCN } from '@ant-design/icons';
 
 import request from '../utils/http';
 import { theme } from '../constant/theme.config';
-import * as config from '../constant/constant';
+import * as constant from '../constant/constant';
 import ImageCode from './ImageCode';
 
 const IconFont = createFromIconfontCN({
@@ -22,12 +23,16 @@ interface State {
     url: string,
     imgKey: number,
     loadding: boolean,
-    isPeople: boolean
+    isPeople: boolean,
+    showImageCode: boolean,
+    userName: string,
+    imgInfo: object
 }
 
 
 class HeaderMain extends React.Component<any, State> {
 
+    loginFormRef = React.createRef<FormInstance>();
 
     constructor(props: any) {
         super(props);
@@ -38,11 +43,22 @@ class HeaderMain extends React.Component<any, State> {
             url: 'https://bing.ioliu.cn/v1/rand?w=400&h=240',
             imgKey: 0,
             loadding: false,
-            isPeople: false
+            isPeople: false,
+            showImageCode: false,
+            userName: '',
+            imgInfo: {
+                bg: '',
+                ani: '',
+                y: 0,
+                userName: ''
+            }
         }
         this.openDraw = this.openDraw.bind(this);
     }
 
+    componentDidMount() {
+
+    }
 
     getRandom() {
         var Num = "";
@@ -93,28 +109,30 @@ class HeaderMain extends React.Component<any, State> {
     }
 
     handleOkLogin() {
-        // if (!this.state.isPeople) {
-        //     message.success('请滑动验证码！');
-        //     return;
-        // }
-        const [form] = Form.useForm();
-        // form.validateFields((err: any, values: any) => {
-        //     this.setState({ loginLoading: true });
-        //     request(config.login, { method: 'POST', body: values }).then((data) => {
-        //         this.setState({ loginLoading: false });
-        //         if (data.status === 0) {
-        //             message.success('登录成功!');
-        //             this.setState({ loginCon: false });
-        //             this.onReload();
-        //             // this.props.dispatch(userActions.setUser(data.user));
-        //             // this.props.history.push({ pathname: '/' });
-        //         } else {
-        //             message.error(data.msg);
-        //         }
-        //     });
-        // })
-        form.validateFields().then((values) => {
-            console.log(values);
+        this.loginFormRef.current.validateFields().then((value) => {
+            if (this.props.imageStatus.status !== 'success') {
+                this.getImage(value.phone);
+            } else {
+                this.setState({ loginLoading: true });
+                value.x = this.props.imageStatus.x;
+                request(constant.login, { method: 'POST', body: value }).then((data) => {
+                    this.setState({ loginLoading: false });
+                    this.refresh();
+                    this.setImageStatus('', false, 0);
+                    if (data && data.status === 0) {
+                        message.success('登录成功!');
+                        this.setState({ loginCon: false });
+                        this.props.dispatch({
+                            type: 'set_user',
+                            payload: {
+                                user: data.data
+                            }
+                        });
+                    } else {
+                        message.error(data.msg);
+                    }
+                });
+            }
         }).catch((err) => {
             console.log(err);
         });
@@ -124,21 +142,59 @@ class HeaderMain extends React.Component<any, State> {
         this.setState({ loginCon: false });
     }
 
-    onReload() {
-        const number = this.state.imgKey + 1;
-        this.setState({ imgKey: number });
-    }
-
     handleSubmit(e: any) {
         e.preventDefault();
     }
 
     loginOut() {
-        // this.props.dispatch(userActions.delUser());
+        this.props.dispatch({
+            type: 'del_user'
+        });
     }
 
     goTo(url: string) {
         this.props.history.push({ pathname: url });
+    }
+
+    getImage(userName) {
+        request(constant.getLoginImage + '?userName=' + userName, { method: 'get' }).then((data) => {
+            if (data.status === 0) {
+                const imgInfo = data.data;
+                imgInfo.userName = userName;
+                this.setState({ imgInfo }, () => {
+                    this.setImageStatus('', true, 0);
+                });
+            }
+        });
+    }
+
+    setImageStatus(type, show, x) {
+        this.props.dispatch({
+            type: 'set_image_status',
+            payload: {
+                status: {
+                    show: show,
+                    status: type,
+                    x: x
+                },
+            }
+        });
+    }
+
+    refresh() {
+        const cur = document.querySelector('.progress') as HTMLElement;
+        const aniBg = document.querySelector('.aniBg') as HTMLElement;
+        const curBg = document.querySelector('.progress-bg') as HTMLElement;
+        cur.style.left = 10 + 'px';
+        aniBg.style.left = 10 + 'px';
+        curBg.style.width = 0 + 'px';
+        curBg.style.display = 'none';
+
+        cur.style.backgroundColor = "#ffffff";
+        cur.style.color = '#808080';
+        cur.style.borderColor = '#e1e1e1';
+        curBg.style.backgroundColor = "#e6f7ff";
+        curBg.style.borderColor = '#1890ff';
     }
 
     render() {
@@ -209,15 +265,29 @@ class HeaderMain extends React.Component<any, State> {
                     onOk={this.handleOkLogin.bind(this)}
                     confirmLoading={this.state.loginLoading}
                     onCancel={this.handleCancelLogin.bind(this)}
+                    footer={[
+                        <Button key="back" onClick={this.handleCancelLogin.bind(this)}>
+                            取消
+                        </Button>,
+                        <Popover
+                            key={20}
+                            content={<ImageCode imgInfo={this.state.imgInfo} />}
+                            visible={this.props.imageStatus.show}
+                        >
+                            <Button key="submit" type="primary" loading={this.state.loginLoading} onClick={this.handleOkLogin.bind(this)}>
+                                登录
+                        </Button>
+                        </Popover>,
+                    ]}
                 >
-                    <Form {...formItemLayout} onFinish={(e) => this.handleSubmit(e)} className="login-form">
-                        <Form.Item label="请输入手机号" rules={[{ required: true, message: '请输入手机号' }, { pattern: new RegExp(/^1[34578]\d{9}$/), message: '请输入正确手机号' }]}>
+                    <Form {...formItemLayout} className="login-form" ref={this.loginFormRef}>
+                        <Form.Item name="phone" label="请输入手机号" rules={[{ required: true, message: '请输入手机号' }, { pattern: new RegExp(/^1[34578]\d{9}$/), message: '请输入正确手机号' }]}>
                             <Input
                                 prefix={<IconFont type="iconphone" style={{ color: 'rgba(0,0,0,.25)' }} />}
                                 placeholder="请输入手机号"
                             />
                         </Form.Item>
-                        <Form.Item label="请输入密码" rules={[{ required: true, message: '请输入密码' }, { max: 16, message: '密码最大16位' }, { min: 6, message: '密码最小6位' }]}>
+                        <Form.Item name="password" label="请输入密码" rules={[{ required: true, message: '请输入密码' }, { max: 16, message: '密码最大16位' }, { min: 6, message: '密码最小6位' }]}>
                             <Input
                                 prefix={<IconFont type="iconlock" style={{ color: 'rgba(0,0,0,.25)' }} />}
                                 type="password"
@@ -225,14 +295,7 @@ class HeaderMain extends React.Component<any, State> {
                             />
                         </Form.Item>
                     </Form>
-                    <ImageCode
-                        imgKey={this.state.imgKey}
-                        imageUrl={this.state.url}
-                        onReload={this.onReload.bind(this)}
-                        onMatch={() => {
-                            this.setState({ isPeople: true });
-                        }}
-                    />
+                    {/* <ImageCode /> */}
                 </Modal>
             </Header>
         )
@@ -243,7 +306,8 @@ class HeaderMain extends React.Component<any, State> {
 function mapStateToProps(state) {
     return {
         login: state.login,
-        theme: state.theme
+        theme: state.theme,
+        imageStatus: state.imageStatus
     }
 }
 

@@ -1,319 +1,170 @@
-/**
- * @name ImageCode
- * @desc 滑动拼图验证
- * @author darcrand
- * @version 2019-02-26
- *
- * @param {String} imageUrl 图片的路径
- * @param {Number} imageWidth 展示图片的宽带
- * @param {Number} imageHeight 展示图片的高带
- * @param {Number} fragmentSize 滑动图片的尺寸
- * @param {Function} onReload 当点击'重新验证'时执行的函数
- * @param {Function} onMath 匹配成功时执行的函数
- * @param {Function} onError 匹配失败时执行的函数
- */
+import React from 'react';
+import { Layout, Popover, Dropdown, Form, message, Menu, Modal, Input } from 'antd';
+import { connect } from 'react-redux';
+import { createFromIconfontCN, RightOutlined, RedoOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 
-import React from "react"
-// import { Icon } from 'antd';
-import "../styles/index.less";
+import request from '../utils/http';
+import { theme } from '../constant/theme.config';
+import * as constant from '../constant/constant';
 
-const icoSuccess = 'check';
-const icoError = 'close';
-const icoReload = 'redo';
+class ImageCode extends React.Component<any, any> {
 
-const STATUS_LOADING = 0 // 还没有图片
-const STATUS_READY = 1 // 图片渲染完成,可以开始滑动
-const STATUS_MATCH = 2 // 图片位置匹配成功
-const STATUS_ERROR = 3 // 图片位置匹配失败
-
-const arrTips = [{ ico: icoSuccess, text: "匹配成功" }, { ico: icoError, text: "匹配失败" }]
-
-// 生成裁剪路径
-function createClipPath(ctx: any, size = 100, styleIndex = 0) {
-    const styles = [
-        [0, 0, 0, 0],
-        [0, 0, 0, 1],
-        [0, 0, 1, 0],
-        [0, 0, 1, 1],
-        [0, 1, 0, 0],
-        [0, 1, 0, 1],
-        [0, 1, 1, 0],
-        [0, 1, 1, 1],
-        [1, 0, 0, 0],
-        [1, 0, 0, 1],
-        [1, 0, 1, 0],
-        [1, 0, 1, 1],
-        [1, 1, 0, 0],
-        [1, 1, 0, 1],
-        [1, 1, 1, 0],
-        [1, 1, 1, 1]
-    ]
-    const style = styles[styleIndex]
-
-    const r = 0.1 * size
-    ctx.save()
-    ctx.beginPath()
-    // left
-    ctx.moveTo(r, r)
-    ctx.lineTo(r, 0.5 * size - r)
-    ctx.arc(r, 0.5 * size, r, 1.5 * Math.PI, 0.5 * Math.PI, style[0])
-    ctx.lineTo(r, size - r)
-    // bottom
-    ctx.lineTo(0.5 * size - r, size - r)
-    ctx.arc(0.5 * size, size - r, r, Math.PI, 0, style[1])
-    ctx.lineTo(size - r, size - r)
-    // right
-    ctx.lineTo(size - r, 0.5 * size + r)
-    ctx.arc(size - r, 0.5 * size, r, 0.5 * Math.PI, 1.5 * Math.PI, style[2])
-    ctx.lineTo(size - r, r)
-    // top
-    ctx.lineTo(0.5 * size + r, r)
-    ctx.arc(0.5 * size, r, r, 0, Math.PI, style[3])
-    ctx.lineTo(r, r)
-
-    ctx.clip()
-    ctx.closePath()
-}
-
-interface Iprops {
-    imageUrl: string,
-    imageWidth: number,
-    imageHeight: number,
-    fragmentSize: number,
-    onMatch: () => void,
-    onError: () => {},
-    onReload: () => void,
-    imgKey: number
-}
-
-interface Istate {
-    currX: number,
-    offsetX: number,
-    status: number,
-    offsetY: number,
-    isMovable: boolean,
-    startX: number,
-    oldX: number,
-    showTips: boolean,
-    tipsIndex: number
-}
-
-class ImageCode extends React.Component<Iprops, Istate> {
-    static defaultProps = {
-        imageUrl: "",
-        imageWidth: 400,
-        imageHeight: 240,
-        fragmentSize: 80,
-        onReload: () => { },
-        onMatch: () => { },
-        onError: () => { }
-    }
-
-    state = {
-        isMovable: false,
-        offsetX: 0, //图片截取的x
-        offsetY: 0, //图片截取的y
-        startX: 0, // 开始滑动的 x
-        oldX: 0,
-        currX: 0, // 滑块当前 x,
-        status: STATUS_LOADING,
-        showTips: false,
-        tipsIndex: 0
-    }
-
-    componentDidUpdate(prevProps: any) {
-        // 当父组件传入新的图片后，开始渲染
-        if (!!this.props.imageUrl && prevProps.imgKey !== this.props.imgKey) {
-            this.renderImage()
+    constructor(props: any) {
+        super(props);
+        this.state = {
+            imgInfo: {
+                bg: '',
+                ani: '',
+                x: 0,
+                y: 0,
+            },
+            status: ''
         }
+        this.onmousedown = this.onmousedown.bind(this);
+        this.refresh = this.refresh.bind(this);
     }
 
     componentDidMount() {
-        this.renderImage();
+        // console.log(this.props);
     }
 
-    renderImage = () => {
-        // 初始化状态
-        this.setState({ status: STATUS_LOADING })
-
-        // 创建一个图片对象，主要用于canvas.context.drawImage()
-        const objImage = new Image();
-        objImage.addEventListener("load", () => {
-            const { imageWidth, imageHeight, fragmentSize } = this.props;
-
-            // 先获取两个ctx
-            const ctxShadow = (this.refs.shadowCanvas as HTMLCanvasElement).getContext("2d") || { fillStyle: '', fill: () => { }, restore: () => { } };
-            const ctxFragment = (this.refs.fragmentCanvas as HTMLCanvasElement).getContext("2d") || { drawImage: () => { }, restore: () => { } };
-
-            // 让两个ctx拥有同样的裁剪路径(可滑动小块的轮廓)
-            const styleIndex = Math.floor(Math.random() * 16);
-            createClipPath(ctxShadow, fragmentSize, styleIndex);
-            createClipPath(ctxFragment, fragmentSize, styleIndex);
-
-
-            // 随机生成裁剪图片的开始坐标
-            const clipX = Math.floor(fragmentSize + (imageWidth - 2 * fragmentSize) * Math.random());
-            const clipY = Math.floor((imageHeight - fragmentSize) * Math.random());
-            // const canvasTemp = document.createElement('canvas').getContext("2d") || { drawImage: () => { }, restore: () => { } };
-            // 让小块绘制出被裁剪的部分
-            // const objTemp1 = canvasTemp.drawImage(objImage, 0, 0, 500, 300);
-            ctxFragment.drawImage(objImage, clipX, clipY, fragmentSize, fragmentSize, 0, 0, fragmentSize, fragmentSize);
-
-            // 让阴影canvas带上阴影效果
-            ctxShadow.fillStyle = "rgba(0, 0, 0, 0.5)";
-            ctxShadow.fill();
-
-            // 恢复画布状态
-            ctxShadow.restore();
-            ctxFragment.restore();
-
-            // 设置裁剪小块的位置
-            this.setState({ offsetX: clipX, offsetY: clipY });
-
-            // 修改状态
-            this.setState({ status: STATUS_READY });
-        })
-
-        objImage.src = this.props.imageUrl;
-    }
-
-    onMoveStart = (e: any) => {
-        if (this.state.status !== STATUS_READY) {
-            return;
-        }
-
-        // 记录滑动开始时的绝对坐标x
-        this.setState({ isMovable: true, startX: e.clientX });
-    }
-
-    onMoving = (e: any) => {
-        if (this.state.status !== STATUS_READY || !this.state.isMovable) {
-            return;
-        }
-        const distance = e.clientX - this.state.startX;
-        let currX = this.state.oldX + distance;
-
-        const minX = 0;
-        const maxX = this.props.imageWidth - this.props.fragmentSize;
-        currX = currX < minX ? 0 : currX > maxX ? maxX : currX;
-
-        this.setState({ currX });
-    }
-
-    onMoveEnd = () => {
-        if (this.state.status !== STATUS_READY || !this.state.isMovable) {
-            return;
-        }
-        // 将旧的固定坐标x更新
-        this.setState(pre => ({ isMovable: false, oldX: pre.currX }));
-
-        const isMatch = Math.abs(this.state.currX - this.state.offsetX) < 5;
-        if (isMatch) {
-            this.setState(pre => ({ status: STATUS_MATCH, currX: pre.offsetX }), this.onShowTips);
-            this.props.onMatch();
-        } else {
-            this.setState({ status: STATUS_ERROR }, () => {
-                this.onReset();
-                this.onShowTips();
+    onmousedown(e) {
+        const cur = document.querySelector('.progress') as HTMLElement;
+        const aniBg = document.querySelector('.aniBg') as HTMLElement;
+        const offsetLeft = this.getOffsetLeft(document.querySelector('.ani-progress'));
+        const curBg = document.querySelector('.progress-bg') as HTMLElement;
+        curBg.style.display = 'block';
+        let moved = 0;
+        document.onmouseup = () => {
+            const left = parseFloat(cur.style.left);
+            document.onmouseup = null;
+            document.onmousemove = null;
+            request(constant.checkLoginImage, { method: 'POST', body: { phone: this.props.imgInfo.userName,x: left } }).then((data) => {
+                if (data && data.status === 0) {
+                    this.setState({ status: 'success' });
+                    cur.style.backgroundColor = "#52c41a";
+                    cur.style.color = '#ffffff';
+                    cur.style.borderColor = '#52c41a';
+                    curBg.style.backgroundColor = "#f6ffed";
+                    curBg.style.borderColor = '#52c41a';
+                    this.setImageStatus('success', false, moved);
+                } else {
+                    message.error(data.msg);
+                    this.setState({ status: 'error' });
+                    this.setImageStatus('error', true, 0);
+                    cur.style.backgroundColor = "#f5222d";
+                    cur.style.color = '#ffffff';
+                    cur.style.borderColor = '#f5222d';
+                    curBg.style.backgroundColor = "#fff1f0";
+                    curBg.style.borderColor = '#f5222d';
+                    setTimeout(() => {
+                        this.refresh();
+                    }, 500);
+                }
             });
-            this.props.onError();
+        }
+        document.onmousemove = (ev: any) => {
+            cur.style.backgroundColor = "#1890ff";
+            cur.style.color = '#ffffff';
+            cur.style.borderColor = '#1890ff';
+            ev = ev || window.event;
+            var moveX = ev.clientX;
+            moveX = this.clamp(moveX);
+            var startMove = offsetLeft;
+            moved = moveX - startMove;
+            cur.style.left = moved + 'px';
+            aniBg.style.left = moved + 'px';
+            curBg.style.width = moved + 'px'
+        };
+
+    }
+
+    clamp(value: any) {
+        const offsetLeft = this.getOffsetLeft(document.querySelector('.ani-progress'));
+        var min = offsetLeft + 10;
+        var max = offsetLeft + 340;
+        if (value > max) {
+            return max;
+        } else if (value < min) {
+            return min;
+        } else {
+            return value;
         }
     }
 
-    onReset = () => {
-        const timer = setTimeout(() => {
-            this.setState({ oldX: 0, currX: 0, status: STATUS_READY });
-            clearTimeout(timer);
-        }, 1000);
-    }
-
-    onReload = () => {
-        if (this.state.status !== STATUS_READY && this.state.status !== STATUS_MATCH) {
-            return;
+    getOffsetLeft(e) {
+        let offsetLeft = 0;
+        if (!e) {
+            return offsetLeft;
         }
-        const ctxShadow = (this.refs.shadowCanvas as HTMLCanvasElement).getContext("2d") || { clearRect: () => { } };
-        const ctxFragment = (this.refs.fragmentCanvas as HTMLCanvasElement).getContext("2d") || { clearRect: () => { } };
-
-        // 清空画布;
-        ctxShadow.clearRect(0, 0, this.props.fragmentSize, this.props.fragmentSize);
-        ctxFragment.clearRect(0, 0, this.props.fragmentSize, this.props.fragmentSize);
-
-        this.setState(
-            {
-                isMovable: false,
-                offsetX: 0, //图片截取的x
-                offsetY: 0, //图片截取的y
-                startX: 0, // 开始滑动的 x
-                oldX: 0,
-                currX: 0, // 滑块当前 x,
-                status: STATUS_LOADING
-            },
-            this.props.onReload
-        );
-    }
-
-    onShowTips = () => {
-        if (this.state.showTips) {
-            return
+        let parent = e.parentNode;
+        while (parent) {
+            if (parent.offsetLeft) {
+                offsetLeft += parent.offsetLeft;
+            }
+            parent = parent.parentNode;
         }
-
-        const tipsIndex = this.state.status === STATUS_MATCH ? 0 : 1;
-        this.setState({ showTips: true, tipsIndex });
-        const timer = setTimeout(() => {
-            this.setState({ showTips: false });
-            clearTimeout(timer);
-        }, 2000);
+        return offsetLeft;
     }
 
+    refresh() {
+        this.setState({ status: '' });
+        const cur = document.querySelector('.progress') as HTMLElement;
+        const aniBg = document.querySelector('.aniBg') as HTMLElement;
+        const curBg = document.querySelector('.progress-bg') as HTMLElement;
+        const offsetLeft = this.getOffsetLeft(document.querySelector('.ani-progress'));
+        cur.style.left = 10 + 'px';
+        aniBg.style.left = 10 + 'px';
+        curBg.style.width = 0 + 'px';
+        curBg.style.display = 'none';
+
+        cur.style.backgroundColor = "#ffffff";
+        cur.style.color = '#808080';
+        cur.style.borderColor = '#e1e1e1';
+        curBg.style.backgroundColor = "#e6f7ff";
+        curBg.style.borderColor = '#1890ff';
+    }
+
+    setImageStatus(type, show, x) {
+        this.props.dispatch({
+            type: 'set_image_status',
+            payload: {
+                status: {
+                    show: show,
+                    status: type,
+                    x: x
+                },
+            }
+        });
+    }
     render() {
-        const { imageUrl, imageWidth, imageHeight, fragmentSize } = this.props;
-        const { offsetX, offsetY, currX, showTips, tipsIndex } = this.state;
-        const tips = arrTips[tipsIndex];
-
         return (
-            <div className="image-code" style={{ width: imageWidth }}>
-                <div className="image-container" style={{ height: imageHeight, backgroundImage: `url("${imageUrl}")`, backgroundSize: 'cover' }}>
-                    <canvas
-                        ref="shadowCanvas"
-                        className="canvas"
-                        width={fragmentSize}
-                        height={fragmentSize}
-                        style={{ left: offsetX + "px", top: offsetY + "px" }}
-                    />
-                    <canvas
-                        ref="fragmentCanvas"
-                        className="canvas"
-                        width={fragmentSize}
-                        height={fragmentSize}
-                        style={{ top: offsetY + "px", left: currX + "px" }}
-                    />
-
-                    <div className={showTips ? "tips-container--active" : "tips-container"}>
-                        {/* <i className="tips-ico" style={{ backgroundImage: `url("${tips.ico}")` }} /> */}
-                        {/* <Icon type={tips.ico} /> */}
-                        <span className="tips-text">{tips.text}</span>
+            <div className="image-code">
+                <div className="con">
+                    <div className="bigBg">
+                        <img src={this.props.imgInfo.bg} alt="" />
                     </div>
-                </div>
-
-                <div className="reload-container">
-                    <div className="reload-wrapper" onClick={this.onReload}>
-                        {/* <Icon type={icoReload} /> */}
-                        <span className="reload-tips">刷新验证</span>
+                    <div className="aniBg" style={{ top: this.props.imgInfo.y }}>
+                        <img src={this.props.imgInfo.ani} alt="" />
                     </div>
+                    <a className="image-refresh" onClick={this.refresh}><RedoOutlined /></a>
                 </div>
-
-                {/* <div className="slider-wrpper" onMouseMove={this.onMoving} onMouseLeave={this.onMoveEnd}>
-                    <div className="slider-bar">按住滑块，拖动完成拼图</div>
-                    <div
-                        className="slider-button"
-                        onMouseDown={this.onMoveStart}
-                        onMouseUp={this.onMoveEnd}
-                        style={{ left: currX + "px", backgroundImage: `url("${icoSlider}")` }}
-                    />
-                </div> */}
+                <div className="ani-progress">
+                    <div className="progress-bg"></div>
+                    <a className="progress" draggable="true" onMouseDown={this.onmousedown}>
+                        {this.state.status === 'success' ? <CheckOutlined /> : this.state.status === 'error' ? <CloseOutlined /> : <RightOutlined />}
+                    </a>
+                </div>
             </div>
         )
     }
 }
 
-export default ImageCode
+
+function mapStateToProps(state) {
+    return {
+
+    }
+}
+
+export default connect(mapStateToProps)(ImageCode);

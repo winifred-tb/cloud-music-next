@@ -1,13 +1,13 @@
 import React from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import { ConfigProvider, Layout } from 'antd';
+import { ConfigProvider, Layout, message } from 'antd';
 import zhCN from 'antd/lib/locale/zh_CN';
 import { connect } from 'react-redux';
 
 import Header from './header';
-
-const { Footer, Sider, Content } = Layout;
+import Footer from './footer';
+const { Sider, Content } = Layout;
 
 class Main extends React.Component<any, any> {
     componentDidMount() {
@@ -16,6 +16,17 @@ class Main extends React.Component<any, any> {
             payload: {
                 theme: localStorage.getItem('theme-cloud') || 'black',
             }
+        });
+        if (localStorage.getItem('cloud-user') && localStorage.getItem('cloud-user') !== 'undefined' && localStorage.getItem('cloud-user') !== 'null') {
+            this.props.dispatch({
+                type: 'set_user',
+                payload: {
+                    user: JSON.parse(localStorage.getItem('cloud-user')),
+                }
+            });
+        }
+        message.config({
+            maxCount: 1
         });
     }
 
