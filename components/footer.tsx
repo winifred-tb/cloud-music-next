@@ -155,22 +155,26 @@ class footer extends React.Component<any, Istate> {
     }
 
     onmousedown(e: any) {
+        console.log(1);
         this.setState({ play: true });
         this.isConnect = true;
         const startX = e.clientX;
         const cur = document.getElementsByClassName('cur')[0] as HTMLElement;
+        var footerCon = document.querySelector('.progress') as HTMLElement;
+        const curBtn = document.getElementsByClassName('cur-btn')[0] as HTMLElement;
         document.onmousemove = (ev: any) => {
+            console.log(2);
             ev = ev || window.event;
             var moveX = ev.clientX;
             moveX = this.clamp(moveX);
-            var footerCon = document.querySelector('.progress') as HTMLElement;
             var startMove = footerCon.offsetLeft;
             var moved = moveX - startMove;
             cur.style.width = (moved / footerCon.offsetWidth) * 100 + '%';
+            curBtn.style.left = moved + 'px';
             this.moveTime = (moved / footerCon.offsetWidth) * this.duration;
         };
         document.onmouseup = () => {
-            console.log(1);
+            console.log(3);
             document.onmouseup = null;
             this.isConnect = false;
             const audio = this.player;
@@ -237,9 +241,9 @@ class footer extends React.Component<any, Istate> {
 
                                 </div>
                                 <div className="cur" style={{ backgroundColor: this.props.theme.footerProgressCurBg }}>
-                                    <div className="cur-btn" draggable="true" onMouseDown={this.onmousedown.bind(this)}>
-                                        <div className="inner" style={{ backgroundColor: this.props.theme.footerProgressCurBg }}></div>
-                                    </div>
+                                </div>
+                                <div className="cur-btn" draggable="true" onMouseDown={this.onmousedown.bind(this)}>
+                                    <div className="inner" style={{ backgroundColor: this.props.theme.footerProgressCurBg }}></div>
                                 </div>
                             </div>
                         </div>

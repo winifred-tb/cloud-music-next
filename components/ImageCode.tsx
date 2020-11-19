@@ -29,7 +29,8 @@ class ImageCode extends React.Component<any, any> {
     }
 
     onmousedown(e) {
-        const cur = document.querySelector('.progress') as HTMLElement;
+        console.log(1);
+        const cur = document.querySelector('.code-progress') as HTMLElement;
         const aniBg = document.querySelector('.aniBg') as HTMLElement;
         const offsetLeft = this.getOffsetLeft(document.querySelector('.ani-progress'));
         const curBg = document.querySelector('.progress-bg') as HTMLElement;
@@ -64,6 +65,7 @@ class ImageCode extends React.Component<any, any> {
             });
         }
         document.onmousemove = (ev: any) => {
+            console.log('code');
             cur.style.backgroundColor = "#1890ff";
             cur.style.color = '#ffffff';
             cur.style.borderColor = '#1890ff';
@@ -109,7 +111,7 @@ class ImageCode extends React.Component<any, any> {
 
     refresh() {
         this.setState({ status: '' });
-        const cur = document.querySelector('.progress') as HTMLElement;
+        const cur = document.querySelector('.code-progress') as HTMLElement;
         const aniBg = document.querySelector('.aniBg') as HTMLElement;
         const curBg = document.querySelector('.progress-bg') as HTMLElement;
         const offsetLeft = this.getOffsetLeft(document.querySelector('.ani-progress'));
@@ -151,7 +153,7 @@ class ImageCode extends React.Component<any, any> {
                 </div>
                 <div className="ani-progress">
                     <div className="progress-bg"></div>
-                    <a className="progress" draggable="true" onMouseDown={this.onmousedown}>
+                    <a className="code-progress" draggable="true" onMouseDown={this.onmousedown}>
                         {this.state.status === 'success' ? <CheckOutlined /> : this.state.status === 'error' ? <CloseOutlined /> : <RightOutlined />}
                     </a>
                 </div>
