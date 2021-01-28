@@ -29,7 +29,6 @@ class ImageCode extends React.Component<any, any> {
     }
 
     onmousedown(e) {
-        console.log(1);
         const cur = document.querySelector('.code-progress') as HTMLElement;
         const aniBg = document.querySelector('.aniBg') as HTMLElement;
         const offsetLeft = this.getOffsetLeft(document.querySelector('.ani-progress'));
@@ -49,6 +48,12 @@ class ImageCode extends React.Component<any, any> {
                     curBg.style.backgroundColor = "#f6ffed";
                     curBg.style.borderColor = '#52c41a';
                     this.setImageStatus('success', false, moved);
+                    if(this.props.handelLogin){
+                        this.props.handelLogin();
+                    }
+                    setTimeout(() => {
+                        this.refresh();
+                    }, 1000);
                 } else {
                     message.error(data.msg);
                     this.setState({ status: 'error' });
@@ -65,7 +70,6 @@ class ImageCode extends React.Component<any, any> {
             });
         }
         document.onmousemove = (ev: any) => {
-            console.log('code');
             cur.style.backgroundColor = "#1890ff";
             cur.style.color = '#ffffff';
             cur.style.borderColor = '#1890ff';
@@ -139,6 +143,7 @@ class ImageCode extends React.Component<any, any> {
             }
         });
     }
+    
     render() {
         return (
             <div className="image-code">

@@ -30,6 +30,14 @@ class Main extends React.Component<any, any> {
         });
     }
 
+    dragEnter(e: any) {
+        e.preventDefault()
+    }
+
+    dragOver(e: any) {
+        e.preventDefault()
+    }
+    
     render() {
         return (
             <ConfigProvider locale={zhCN}>
@@ -37,7 +45,7 @@ class Main extends React.Component<any, any> {
                     <link rel="icon" href="/favicon.ico" />
                     <meta name="twitter:card" content="summary_large_image" />
                 </Head>
-                <Layout className="root-layout">
+                <Layout className="root-layout" onDragStart={this.dragEnter.bind(this)} onDragEnd={this.dragOver.bind(this)}>
                     <Header></Header>
                     <Content className="root-content">
                         {this.props.children}

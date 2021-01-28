@@ -57,7 +57,7 @@ class HeaderMain extends React.Component<any, State> {
     }
 
     componentDidMount() {
-
+        // console.log(this.props);
     }
 
     getRandom() {
@@ -140,6 +140,7 @@ class HeaderMain extends React.Component<any, State> {
 
     handleCancelLogin() {
         this.setState({ loginCon: false });
+        this.setImageStatus('', false, 0);
     }
 
     handleSubmit(e: any) {
@@ -157,7 +158,9 @@ class HeaderMain extends React.Component<any, State> {
     }
 
     getImage(userName) {
+        this.setState({ loginLoading: true });
         request(constant.getLoginImage + '?userName=' + userName, { method: 'get' }).then((data) => {
+            this.setState({ loginLoading: false });
             if (data.status === 0) {
                 const imgInfo = data.data;
                 imgInfo.userName = userName;
@@ -212,7 +215,7 @@ class HeaderMain extends React.Component<any, State> {
         const menu = (
             <Menu>
                 <Menu.Item key="0">
-                    <Link href="/UserInfo">
+                    <Link href="/userInfo">
                         <a>个人中心</a>
                     </Link>
                 </Menu.Item>
@@ -254,9 +257,7 @@ class HeaderMain extends React.Component<any, State> {
                         <div className="right-login">
                             <a style={{ color: this.props.theme.headerTextColor }} onClick={this.openLogin.bind(this)}>登录</a>
                             <div style={{ color: this.props.theme.headerTextColor }} className="line"> | </div>
-                            <Link href="/register">
-                                <a style={{ color: this.props.theme.headerTextColor }}>注册</a>
-                            </Link>
+                                <a href="/register" style={{ color: this.props.theme.headerTextColor }}>注册</a>
                         </div>
                     }
                 </div>
@@ -271,7 +272,7 @@ class HeaderMain extends React.Component<any, State> {
                         </Button>,
                         <Popover
                             key={20}
-                            content={<ImageCode imgInfo={this.state.imgInfo} />}
+                            content={<ImageCode imgInfo={this.state.imgInfo} handelLogin={this.handleOkLogin.bind(this)} />}
                             visible={this.props.imageStatus.show}
                         >
                             <Button key="submit" type="primary" loading={this.state.loginLoading} onClick={this.handleOkLogin.bind(this)}>

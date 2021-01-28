@@ -338,6 +338,7 @@ html::-webkit-scrollbar-track {
                     height: 9px;
                     border-radius: 4px;
                     position: relative;
+                    cursor: pointer;
                     .load, .bg, .cur{
                         position: absolute;
                         height: 100%;
@@ -358,7 +359,7 @@ html::-webkit-scrollbar-track {
                     }
                     .cur-btn{
                         position: absolute;
-                        // right: -10px;
+                        right: -10px;
                         top: -4px;
                         width: 16px;
                         height: 16px;
@@ -388,6 +389,19 @@ html::-webkit-scrollbar-track {
                 .timeTotal{
                     color: #797979;
                 }
+            }
+        }
+        .volume{
+            .change{
+                display: block;
+                width: 25px;
+                height: 25px;
+                background: url(/playbar.png) no-repeat 0 9999px;   
+                background-position: -2px -248px;
+                margin-left: 20px;
+            }
+            .change:hover{
+                background-position: -31px -248px;
             }
         }
     }

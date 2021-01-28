@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layout, Button } from 'antd';
+import { Layout, Button, Popover, Slider } from 'antd';
 import { connect } from 'react-redux';
 import { createFromIconfontCN } from '@ant-design/icons';
 
@@ -41,7 +41,8 @@ interface Istate {
     play: boolean,
     bg: string,
     duration: string,
-    curTime: string
+    curTime: string,
+    volume: number
 }
 
 class footer extends React.Component<any, Istate> {
@@ -51,7 +52,8 @@ class footer extends React.Component<any, Istate> {
         play: false,
         bg: '',
         duration: '',
-        curTime: ''
+        curTime: '',
+        volume: 0
     };
     duration: any;
     timer: any;
@@ -60,6 +62,7 @@ class footer extends React.Component<any, Istate> {
 
     isConnect = false;
     eventEmitter: any;
+
     componentDidMount() {
         this.setProgress();
         request(constant.musicIp, {
@@ -95,7 +98,6 @@ class footer extends React.Component<any, Istate> {
     }
 
     play() {
-        console.log(this.props);
         try {
             if (this.state.play) {
                 this.player.pause();
@@ -116,6 +118,8 @@ class footer extends React.Component<any, Istate> {
             this.player.readyState == 4 && this.setState({ bg: Math.round(this.player.buffered.end(0) / this.player.duration * 100) + '%' });
         }
         this.getDuration();
+        this.player.volume = 0.12;
+        this.setState({ volume: 12 });
     }
 
     getDuration() {
@@ -155,7 +159,6 @@ class footer extends React.Component<any, Istate> {
     }
 
     onmousedown(e: any) {
-        console.log(1);
         this.setState({ play: true });
         this.isConnect = true;
         const startX = e.clientX;
@@ -163,18 +166,15 @@ class footer extends React.Component<any, Istate> {
         var footerCon = document.querySelector('.progress') as HTMLElement;
         const curBtn = document.getElementsByClassName('cur-btn')[0] as HTMLElement;
         document.onmousemove = (ev: any) => {
-            console.log(2);
             ev = ev || window.event;
             var moveX = ev.clientX;
             moveX = this.clamp(moveX);
             var startMove = footerCon.offsetLeft;
             var moved = moveX - startMove;
             cur.style.width = (moved / footerCon.offsetWidth) * 100 + '%';
-            curBtn.style.left = moved + 'px';
             this.moveTime = (moved / footerCon.offsetWidth) * this.duration;
         };
         document.onmouseup = () => {
-            console.log(3);
             document.onmouseup = null;
             this.isConnect = false;
             const audio = this.player;
@@ -198,13 +198,37 @@ class footer extends React.Component<any, Istate> {
         }
     }
 
+    choosePlay(ev) {
+        this.setState({ play: true });
+        var footerCon = document.querySelector('.progress') as HTMLElement;
+        const cur = document.getElementsByClassName('cur')[0] as HTMLElement;
+        ev = ev || window.event;
+        var moveX = ev.clientX;
+        moveX = this.clamp(moveX);
+        var startMove = footerCon.offsetLeft;
+        var moved = moveX - startMove;
+        cur.style.width = (moved / footerCon.offsetWidth) * 100 + '%';
+        this.moveTime = (moved / footerCon.offsetWidth) * this.duration;
+        const audio = this.player;
+        audio.currentTime = this.moveTime;
+        audio.play();
+        this.getCurrentTime();
+    }
+
     toDetail() {
         if (this.props.music.musicId) {
             this.props.history.push({ pathname: '/Music' });
         }
     }
 
+    changeVolume(e) {
+        this.player.volume = e / 100;
+    }
+
     render() {
+        const changeVolume = (<div style={{ display: "inline-block", height: "120px" }}>
+            <Slider vertical defaultValue={this.state.volume} onChange={this.changeVolume.bind(this)} />
+        </div>);
         return (
             <Footer className={'footer ' + this.props.theme.type} style={{ backgroundColor: this.props.theme.footerBg }}>
                 <div className="music-player-content">
@@ -233,7 +257,7 @@ class footer extends React.Component<any, Istate> {
                                 <a className="name" style={{ color: this.props.theme.footerMusicTitleColor }} onClick={this.toDetail.bind(this)}>{this.props.music.musicId ? this.props.music.music.name : ''}</a>
                                 <a className='by' style={{ color: this.props.theme.footerMusicTextColor }}>{this.props.music.musicId ? this.props.music.music.ar[0].name : ''}</a>
                             </div>
-                            <div className="progress">
+                            <div className="progress" onClick={this.choosePlay.bind(this)}>
                                 <div className="load" style={{ width: this.state.bg }}>
 
                                 </div>
@@ -241,15 +265,22 @@ class footer extends React.Component<any, Istate> {
 
                                 </div>
                                 <div className="cur" style={{ backgroundColor: this.props.theme.footerProgressCurBg }}>
-                                </div>
-                                <div className="cur-btn" draggable="true" onMouseDown={this.onmousedown.bind(this)}>
-                                    <div className="inner" style={{ backgroundColor: this.props.theme.footerProgressCurBg }}></div>
+                                    <div className="cur-btn" draggable="true" onMouseDown={this.onmousedown.bind(this)}>
+                                        <div className="inner" style={{ backgroundColor: this.props.theme.footerProgressCurBg }}></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         <div className="time" style={{ color: this.props.theme.footerProgressTimeColor }}>
                             <span className="timeCur">{this.state.curTime}</span> / <span className="timeTotal">{this.state.duration}</span>
                         </div>
+                    </div>
+                    <div className="volume">
+                        <Popover content={changeVolume} trigger="click">
+                            <a className="change">
+
+                            </a>
+                        </Popover>
                     </div>
                 </div>
                 <audio id="music-player" autoPlay={this.props.music.auto} src={this.props.music.musicId ? "https://music.163.com/song/media/outer/url?id=" + this.props.music.musicId + ".mp3" : ''}></audio>

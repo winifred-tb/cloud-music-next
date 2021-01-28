@@ -30,7 +30,7 @@ export default function Home(props) {
                 <title>蘑菇</title>
             </Head>
             {/* <Link href="/Register"><div>tb1</div></Link> */}
-            <Upload
+            {/* <Upload
                 name="avatar"
                 listType="picture-card"
                 className="avatar-uploader"
@@ -40,9 +40,9 @@ export default function Home(props) {
                 onChange={handleChange}
             >
                 <div>
-                    <div style={{ marginTop: 8 }}>Upload</div>
+                    <div style={{ marginTop: 8 }}>Upload1</div>
                 </div>
-            </Upload>
+            </Upload> */}
         </Layout>
     )
 }

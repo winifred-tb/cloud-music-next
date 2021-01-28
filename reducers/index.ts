@@ -64,7 +64,6 @@ function reducer(state = initState, action: any) {
             }
         }
         case 'set_music': {
-            console.log(action.payload);
             return {
                 ...state,
                 music: {
