@@ -51,9 +51,9 @@ class ImageCode extends React.Component<any, any> {
                     if(this.props.handelLogin){
                         this.props.handelLogin();
                     }
-                    setTimeout(() => {
-                        this.refresh();
-                    }, 1000);
+                    // setTimeout(() => {
+                    //     this.refresh();
+                    // }, 1000);
                 } else {
                     message.error(data.msg);
                     this.setState({ status: 'error' });

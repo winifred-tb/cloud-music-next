@@ -4,19 +4,25 @@ const { parse } = require('url');
 const bodyParser = require('koa-bodyparser');
 const next = require('next');
 const koaJwt = require('koa-jwt');
+const koaBody = require('koa-body');
 
 const jwtConfig = require('./config/jwtConfig');
 const routers = require('./routers/index');
 const musicRouters = require('./routers/music');
+const uploadsRouters = require('./routers/uploads');
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
     const server = new Koa();
+    server.use(koaBody({
+        multipart: true
+    }));
     server.use(bodyParser());
     server.use(routers.routes());
     server.use(musicRouters.routes());
+    server.use(uploadsRouters.routes());
     server.use(koaJwt({ secret: jwtConfig.jwtSecret, passthrough: true }).unless({
         // 登录，注册接口不需要验证
         path: [/^\/rest\/login/]
@@ -28,11 +34,11 @@ app.prepare().then(() => {
 
     server.use(async (ctx, next) => {
         ctx.res.statusCode = 200;
-        await next().catch((err)=>{
-            if(err.status === 401){
+        await next().catch((err) => {
+            if (err.status === 401) {
                 ctx.status = 401;
                 ctx.body = '登录超时，请重新登录';
-            }else{
+            } else {
                 throw err;
             }
         });

@@ -9,7 +9,7 @@ import emitter from '../utils/events';
 
 const { Footer } = Layout;
 const IconFont = createFromIconfontCN({
-    scriptUrl: '//at.alicdn.com/t/font_1301029_tsyiwc1jof.js',
+    scriptUrl: '//at.alicdn.com/t/font_1301029_p8kma5yetg.js',
 });
 
 interface Iprops {

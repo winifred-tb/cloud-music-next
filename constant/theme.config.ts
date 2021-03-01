@@ -6,7 +6,7 @@ export const theme: ThemeConfig = {
         headerBg: '#262323',
         headerTextColor: '#cccccc',
         headerTextHover: '#ffffff',
-        contentBg: '#1C1816',
+        contentBg: '#F5F5F5',
         contentTextColor: '#cccccc',
         contentTextHover: '#ffffff',
         contentButtonBg: 'rgba(255,255,255,0.2)',

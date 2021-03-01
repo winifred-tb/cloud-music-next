@@ -178,4 +178,43 @@ routers.post('/rest/login', async (ctx) => {
     });
 });
 
+routers.post('/rest/register', async (ctx) => {
+    ctx.body = ctx.request.body;
+    const itemIndex = arrBuffer.findIndex(v => v.name === ctx.body.phone)
+    if (itemIndex === -1) {
+        ctx.body = { code: 501, msg: "图片验证错误,请刷新重试" };
+        return;
+    }
+    const isMatch = Math.abs(ctx.body.x - arrBuffer[itemIndex].x) < 5;
+    if (!isMatch) {
+        ctx.body = { code: 502, msg: "图片验证错误,请刷新重试" }
+        return;
+    }
+    arrBuffer.splice(itemIndex, 1)
+    const user = await query("SELECT * FROM `user` WHERE phone=?  LIMIT 1 OFFSET 0", ctx.body.phone).then(async (user) => {
+        if (user.length > 0) {
+            ctx.body = { status: 500, msg: "账号已存在!去登录吧" }
+        } else {
+            ctx.body.password = utility.md5(ctx.body.password);
+            ctx.body.date = new Date();
+            if (!ctx.body.address) {
+                ctx.body.address = "";
+            }
+            if (!ctx.body.avatar) {
+                ctx.body.avatar = "/uploads/fd94d19d24443a75ef01cb17f1a9e5db.png";
+            }
+            if(ctx.body.x){
+                delete ctx.body.x;
+            }
+            const regUser = await query("INSERT INTO `user` SET ?", ctx.body).then((user) => {
+                ctx.body = { status: 0, msg: "注册成功" };
+            }).catch((err) => {
+                ctx.body = { status: 500, msg: "注册失败" + err };
+            });
+        }
+    }).catch((err) => {
+        ctx.body = { status: 500, msg: "注册失败" + err };
+    });
+});
+
 module.exports = routers;

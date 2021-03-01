@@ -11,7 +11,7 @@ import * as constant from '../constant/constant';
 import ImageCode from './ImageCode';
 
 const IconFont = createFromIconfontCN({
-    scriptUrl: '//at.alicdn.com/t/font_1301029_tsyiwc1jof.js',
+    scriptUrl: '//at.alicdn.com/t/font_1301029_p8kma5yetg.js',
 });
 
 const { Header } = Layout;
@@ -257,7 +257,9 @@ class HeaderMain extends React.Component<any, State> {
                         <div className="right-login">
                             <a style={{ color: this.props.theme.headerTextColor }} onClick={this.openLogin.bind(this)}>登录</a>
                             <div style={{ color: this.props.theme.headerTextColor }} className="line"> | </div>
-                                <a href="/register" style={{ color: this.props.theme.headerTextColor }}>注册</a>
+                            <Link href="/register">
+                                <a style={{ color: this.props.theme.headerTextColor }}>注册</a>
+                            </Link>
                         </div>
                     }
                 </div>

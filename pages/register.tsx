@@ -1,16 +1,20 @@
 import React from 'react';
 import Link from 'next/link';
-import { Form, Modal, Input, Button, Mentions } from 'antd';
+import { withRouter } from 'next/router'
+import { Form, Modal, Input, Button, Mentions, message, Popover } from 'antd';
 import { FormInstance } from 'antd/lib/form';
 import { useSelector, useDispatch, connect } from 'react-redux';
 import { createFromIconfontCN } from '@ant-design/icons';
 import AvatarEditor from 'react-avatar-editor';
 
+import * as constant from '../constant/constant';
 import Layout from '../components/layout';
 import { initializeStore } from '../store';
+import request from '../utils/http';
+import ImageCode from '../components/ImageCode';
 
 const IconFont = createFromIconfontCN({
-    scriptUrl: '//at.alicdn.com/t/font_1301029_tsyiwc1jof.js',
+    scriptUrl: '//at.alicdn.com/t/font_1301029_p8kma5yetg.js',
 });
 
 interface State {
@@ -18,7 +22,8 @@ interface State {
     copper: boolean,
     loadding: boolean,
     uploadLoading: boolean,
-    image: any
+    image: any,
+    imgInfo: object
 }
 
 class Register extends React.Component<any, State> {
@@ -35,21 +40,27 @@ class Register extends React.Component<any, State> {
             loadding: false,
             image: null,
             userAvata: '',
-            uploadLoading: false
+            uploadLoading: false,
+            imgInfo: {
+                bg: '',
+                ani: '',
+                y: 0,
+                userName: ''
+            }
         }
 
     }
 
-    compareToFirstPassword = (rule: any, value: any, callback: Function) => {
-        const { form } = this.props;
-        if (value.length < 6 || value.length > 16) {
-            callback();
-            return;
+    compareToFirstPassword = (rule: any, value: any) => {
+        const form = this.registerFormRef.current!;
+        if (!value || value.length < 6 || value.length > 16) {
+            return Promise.resolve();
         }
+        console.log(value, form.getFieldValue('password'));
         if (value && value !== form.getFieldValue('password')) {
-            callback('傻子吗，两次密码不一致');
+            return Promise.reject('傻子吗，两次密码不一致');
         } else {
-            callback();
+            return Promise.resolve();
         }
     }
 
@@ -75,8 +86,8 @@ class Register extends React.Component<any, State> {
                 .then(res => res.blob())
                 .then(blob => {
                     const file = new File([blob], new Date().getTime() + '.png', { 'type': 'image/png' });
-                    // this.uploadImg(file);
-                    console.log(file);
+                    this.uploadImg(file);
+                    // console.log(file);
                 });
         }
     }
@@ -89,21 +100,109 @@ class Register extends React.Component<any, State> {
     }
 
     handleSubmit(e) {
-        this.registerFormRef.current.validateFields().then((value) => {
-            console.log(value);
+        this.registerFormRef.current.validateFields().then((values) => {
+            if (this.props.imageStatus.status !== 'success') {
+                this.getImage(values.phone);
+            } else {
+                this.setState({ loadding: true });
+                values.x = this.props.imageStatus.x;
+                values.avatar = this.state.userAvata;
+                delete values.subminPassword;
+                this.setState({ loadding: true });
+                request(constant.register, { method: 'POST', body: values }).then((data) => {
+                    this.setState({ loadding: false });
+                    this.refresh();
+                    this.setImageStatus('', false, 0);
+                    if (data.status === 0) {
+                        message.success('注册成功!');
+                        console.log(this.props);
+                        this.props.router.push('/');
+                    } else {
+                        message.error(data.msg);
+                    }
+                });
+            }
         }).catch((err) => {
             console.log(err);
         });;
     }
+
+    uploadImg(file: File) {
+        const formData = new FormData();
+        formData.append('file', file as any);
+        formData.append('id', '1000');
+
+        fetch(constant.upload, {
+            method: "POST",
+            body: formData
+        }).then(response => response.json())
+            .then((data) => {
+                if (data.status === 0) {
+                    this.setState({ userAvata: data.url, uploadLoading: false, copper: false });
+                    if (this.inputValue.current) {
+                        this.inputValue.current.value = '';
+                    }
+                }
+            })
+            .catch((error) => {
+                this.setState({ uploadLoading: false });
+
+            });
+    }
+
+    getImage(userName) {
+        this.setState({ loadding: true });
+        request(constant.getLoginImage + '?userName=' + userName, { method: 'get' }).then((data) => {
+            this.setState({ loadding: false });
+            if (data.status === 0) {
+                const imgInfo = data.data;
+                imgInfo.userName = userName;
+                this.setState({ imgInfo }, () => {
+                    this.setImageStatus('', true, 0);
+                });
+            }
+        });
+    }
+
+    setImageStatus(type, show, x) {
+        this.props.dispatch({
+            type: 'set_image_status',
+            payload: {
+                status: {
+                    show: show,
+                    status: type,
+                    x: x
+                },
+            }
+        });
+    }
+
+    refresh() {
+        console.log(document.querySelector('.progress'));
+        // const cur = document.querySelector('.progress') as HTMLElement;
+        // const aniBg = document.querySelector('.aniBg') as HTMLElement;
+        // const curBg = document.querySelector('.progress-bg') as HTMLElement;
+        // cur.style.left = 10 + 'px';
+        // aniBg.style.left = 10 + 'px';
+        // curBg.style.width = 0 + 'px';
+        // curBg.style.display = 'none';
+
+        // cur.style.backgroundColor = "#ffffff";
+        // cur.style.color = '#808080';
+        // cur.style.borderColor = '#e1e1e1';
+        // curBg.style.backgroundColor = "#e6f7ff";
+        // curBg.style.borderColor = '#1890ff';
+    }
+
     render() {
         const formItemLayout = {
             labelCol: {
-                xs: { span: 8 },
-                sm: { span: 12 },
+                xs: { span: 24 },
+                sm: { span: 9 },
             },
             wrapperCol: {
-                xs: { span: 8 },
-                sm: { span: 12 },
+                xs: { span: 24 },
+                sm: { span: 15 },
             },
         };
         return (
@@ -112,31 +211,31 @@ class Register extends React.Component<any, State> {
                     <Form {...formItemLayout} ref={this.registerFormRef} className="login-form">
                         <Form.Item name="userName" label="请输入昵称" rules={[{ required: true, message: '请输入昵称' }]} style={{ color: this.props.theme.contentTextColor }}>
                             <Input
-                                prefix={<IconFont type="user" style={{ color: 'rgba(0,0,0,.25)' }} />}
+                                prefix={<IconFont type="iconuser" style={{ color: 'rgba(0,0,0,.25)' }} />}
                                 placeholder="请输入昵称"
                             />
                         </Form.Item>
                         <Form.Item name="phone" label="请输入手机号" rules={[{ required: true, message: '请输入手机号' }, { pattern: new RegExp(/^1[34578]\d{9}$/), message: '请输入正确手机号' }]} style={{ color: this.props.theme.contentTextColor }}>
                             <Input
-                                prefix={<IconFont type="phone" style={{ color: 'rgba(0,0,0,.25)' }} />}
+                                prefix={<IconFont type="iconhomebeifen" style={{ color: 'rgba(0,0,0,.25)' }} />}
                                 placeholder="请输入手机号"
                             />
                         </Form.Item>
                         <Form.Item name="password" label="请输入密码" rules={[{ required: true, message: '请输入密码' }, { max: 16, message: '密码最大16位' }, { min: 6, message: '密码最小6位' }]} style={{ color: this.props.theme.contentTextColor }}>
                             <Input
-                                prefix={<IconFont type="lock" style={{ color: 'rgba(0,0,0,.25)' }} />}
+                                prefix={<IconFont type="iconlock1" style={{ color: 'rgba(0,0,0,.25)' }} />}
                                 placeholder="请输入密码"
                                 type="password"
                             />
                         </Form.Item>
                         <Form.Item name="subminPassword" label="请输入确认密码" rules={[{ required: true, message: '请输入确认密码' }, { max: 16, message: '密码最大16位' }, { min: 6, message: '密码最小6位' }, { validator: this.compareToFirstPassword }]} style={{ color: this.props.theme.contentTextColor }}>
                             <Input
-                                prefix={<IconFont type="lock" style={{ color: 'rgba(0,0,0,.25)' }} />}
+                                prefix={<IconFont type="iconlock1" style={{ color: 'rgba(0,0,0,.25)' }} />}
                                 placeholder="请输入确认密码"
                                 type="password"
                             />
                         </Form.Item>
-                        <Form.Item name="userName" label="请输入简介" rules={[]} initialValue={'剑未配妥，出门早已江湖。'} style={{ color: this.props.theme.contentTextColor }}>
+                        <Form.Item name="desc" label="请输入简介" rules={[]} initialValue={'剑未配妥，出门早已江湖。'} style={{ color: this.props.theme.contentTextColor }}>
                             <Mentions rows={3} placeholder="">
                             </Mentions>
                         </Form.Item>
@@ -149,7 +248,7 @@ class Register extends React.Component<any, State> {
                                     </div>
                                     <div className="avatar-opera">
                                         <a className='list' onClick={this.delImg.bind(this)}>
-                                            <IconFont type="delete" />
+                                            <IconFont type="icondel" />
                                         </a>
                                     </div>
                                 </div>
@@ -157,13 +256,19 @@ class Register extends React.Component<any, State> {
                                 <div className="user-avatar-content">
                                     <input className="user-avatar" ref={this.inputValue} type="file" accept="image/*" onChange={this.uploadChange.bind(this)} />
                                     <div className="avata-upload">
-                                        <IconFont type="plus" />
+                                        <IconFont type="iconadd" />
                                         <div>上传头像</div>
                                     </div>
                                 </div>
                             }
                         </Form.Item>
-                        <Button loading={this.state.loadding} type="primary" onClick={(e) => this.handleSubmit(e)} className="login-form-button ml20">注册</Button>
+                        <Popover
+                            key={20}
+                            content={<ImageCode imgInfo={this.state.imgInfo} handelLogin={this.handleSubmit.bind(this)} />}
+                            visible={this.props.imageStatus.show}
+                        >
+                            <Button loading={this.state.loadding} type="primary" onClick={(e) => this.handleSubmit(e)} className="login-form-button ml20">注册</Button>
+                        </Popover>
                     </Form>
 
                     <Modal
@@ -206,4 +311,4 @@ function mapStateToProps(state) {
     }
 }
 
-export default connect(mapStateToProps)(Register);
+export default connect(mapStateToProps)(withRouter(Register));

@@ -42,12 +42,13 @@ class Main extends React.Component<any, any> {
         return (
             <ConfigProvider locale={zhCN}>
                 <Head>
+                    <title>蘑菇</title>
                     <link rel="icon" href="/favicon.ico" />
                     <meta name="twitter:card" content="summary_large_image" />
                 </Head>
                 <Layout className="root-layout" onDragStart={this.dragEnter.bind(this)} onDragEnd={this.dragOver.bind(this)}>
                     <Header></Header>
-                    <Content className="root-content">
+                    <Content className="root-content" style={{ backgroundColor: this.props.theme.contentBg }}>
                         {this.props.children}
                     </Content>
                     <Footer></Footer>
@@ -60,7 +61,7 @@ class Main extends React.Component<any, any> {
 
 function mapStateToProps(state) {
     return {
-
+        theme: state.theme
     }
 }
 
